@@ -10,7 +10,7 @@ class Template extends Model
 {
     use HasFactory;
     function template_fields(){
-        return $this->hasOne(TemplateField::class);
+        return $this->hasMany(TemplateField::class);
     }
 
 }

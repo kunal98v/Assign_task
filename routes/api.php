@@ -10,6 +10,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::post('create',[TemplateController::class,'create']);
-
+Route::get('update',[TemplateController::class,'update']);
+Route::get('delete',[TemplateController::class,'delete']);
 
 
