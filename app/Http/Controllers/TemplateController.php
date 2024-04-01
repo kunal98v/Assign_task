@@ -9,6 +9,7 @@ use App\Models\Template;
 use App\Models\Validation;
 use Illuminate\Http\Request;
 use App\Models\TemplateField;
+use App\Models\TemplatePayload;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -74,7 +75,8 @@ public function update(Request $request){
     $fieldIds = $fieldsFromRequest?->pluck('field_id')->toArray();
 
     TemplateField::where('template_id', $request->id)->whereNotIn('id', $fieldIds)->delete();
-    $record = Template::with('template_fields')->find($request->id);
+
+    $record = Template::find($request->id);
     $record->template_name =  $request->template_name;
     $record->save();
 
@@ -92,16 +94,13 @@ public function update(Request $request){
         if (!$field) {
             $field = new TemplateField();
             $field->template_id = $request->template_id;
-            $field->id = $data["field_id"];
-        }
-        
-        if (TemplateField::find($data["field_name"])){
-            $field->field_name = $data["field_name"];
-        } else {
-            return "Field name already exists !";
+            $field->id =
+            $data["field_id"];
         }
 
-        if (DataType::find($data["data_type"])){
+        $field->field_name = $data["field_name"];
+    
+        if (DataType::find($data["data_type"])) {
             $field->data_type_id = $data["data_type"];
         } else {
             return "Data Type Not Found !";
@@ -121,8 +120,46 @@ public function update(Request $request){
     Log::error($e->getMessage(), [$e->getTraceAsString()]);
     throw new HttpResponseException(response()->json(['status' => false , 'message' => $e->getMessage(), 'errors' => $e->getTraceAsString()]));
 }
-    return "updated !" ;
+    return "Data updated !" ;
 }
+
+    public function payload(Request $request){
+        $arr = $request->fields;
+        $obj = new TemplatePayload();
+        $obj->template_id = $request->id;
+        $obj->payload =[];
+        foreach($arr as $data){
+            $data_type_id =TemplateField::find($data['field_id'])->data_type_id;
+            $data_type_name =  DataType::find($data_type_id)->data_type_name;
+            $validation_id =TemplateField::find($data['field_id'])->validation_id;
+            $validation_name = Validation::find($validation_id)->validation_name;
+            
+            $is_mandatory =TemplateField::find($data['field_id'])->is_mandatory;
+            if($is_mandatory){
+                if(!$data['value']){
+                    return "Field is mandatory!";
+                }
+                if($data_type_name == gettype($data['value']))
+                {        
+                    $obj->payload += [
+                        $data['field_name'] => $data['value'],
+                        ];
+                    $obj->save();
+                }else {
+                    return $data['value'] . " is not ". $data_type_name;
+                }
+            } else{
+                if($data['value']){
+                    $obj->payload += [
+                    $data['field_name'] => $data['value'],
+                    ];
+                    $obj->save();
+                }
+            }
+        }
+       return $validation_name;
+    }
+
 
 
     public function delete(Request $request){

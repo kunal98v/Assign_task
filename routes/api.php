@@ -13,4 +13,7 @@ Route::post('create',[TemplateController::class,'create']);
 Route::get('update',[TemplateController::class,'update']);
 Route::get('delete',[TemplateController::class,'delete']);
 
+Route::post('payload',[TemplateController::class,'payload']);
+
+
 
