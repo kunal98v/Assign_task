@@ -133,11 +133,11 @@ public function update(Request $request){
             $data_type_name =  DataType::find($data_type_id)->data_type_name;
             $validation_id =TemplateField::find($data['field_id'])->validation_id;
             $validation_name = Validation::find($validation_id)->validation_name;
-            
+
             $is_mandatory =TemplateField::find($data['field_id'])->is_mandatory;
             if($is_mandatory){
                 if(!$data['value']){
-                    return "Field is mandatory!";
+                    return $data['field_name'] ." field is mandatory!";
                 }
                 if($data_type_name == gettype($data['value']))
                 {        
@@ -157,9 +157,8 @@ public function update(Request $request){
                 }
             }
         }
-       return $validation_name;
+       return "Payload Added";
     }
-
 
 
     public function delete(Request $request){
