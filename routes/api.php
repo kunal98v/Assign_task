@@ -15,5 +15,6 @@ Route::get('delete',[TemplateController::class,'delete']);
 
 Route::post('payload',[TemplateController::class,'payload']);
 
+Route::get('fetch',[TemplateController::class,'fetchData']);
 
 

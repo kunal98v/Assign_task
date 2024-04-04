@@ -123,43 +123,82 @@ public function update(Request $request){
     return "Data updated !" ;
 }
 
-    public function payload(Request $request){
-        $arr = $request->fields;
-        $obj = new TemplatePayload();
-        $obj->template_id = $request->id;
-        $obj->payload =[];
-        foreach($arr as $data){
-            $data_type_id =TemplateField::find($data['field_id'])->data_type_id;
-            $data_type_name =  DataType::find($data_type_id)->data_type_name;
-            $validation_id =TemplateField::find($data['field_id'])->validation_id;
-            $validation_name = Validation::find($validation_id)->validation_name;
 
-            $is_mandatory =TemplateField::find($data['field_id'])->is_mandatory;
-            if($is_mandatory){
-                if(!$data['value']){
-                    return $data['field_name'] ." field is mandatory!";
-                }
-                if($data_type_name == gettype($data['value']))
-                {        
-                    $obj->payload += [
-                        $data['field_name'] => $data['value'],
-                        ];
-                    $obj->save();
-                }else {
-                    return $data['value'] . " is not ". $data_type_name;
-                }
-            } else{
-                if($data['value']){
-                    $obj->payload += [
+
+public function payload(Request $request){
+
+try{
+    $arr = $request->fields;
+    $obj = new TemplatePayload();
+    $obj->template_id = $request->id;
+       
+    $obj->payload =[];
+    foreach($arr as $data){
+        $data_type_id =TemplateField::find($data['field_id'])->data_type_id;
+        $data_type_name =  DataType::find($data_type_id)->data_type_name;
+        $validation_id =TemplateField::find($data['field_id'])->validation_id;
+        $validation_name = Validation::find($validation_id)->validation_name;
+
+        $is_mandatory =TemplateField::find($data['field_id'])->is_mandatory;
+
+        if($is_mandatory){
+            if(!$data['value']){
+                $obj->delete();
+                return $data['field_name'] ." field is mandatory!";
+            }
+
+            $validator = Validator::make([$data['field_name']=>$data['value']],[$data['field_name'] => $validation_name]);
+            if ($validator->fails()) {
+                $obj->delete();
+                return $data['value']. " is not valid ".$data['field_name'];
+            }
+
+            if($data_type_name == gettype($data['value']))
+            {        
+                $obj->payload += [
                     $data['field_name'] => $data['value'],
                     ];
-                    $obj->save();
-                }
+                $obj->save();
+            }else {
+                return $data['value'] . " is not ". $data_type_name;
+            }
+            
+        } else{
+            if($data['value']){
+                $obj->payload += [
+                $data['field_name'] => $data['value'],
+                ];
+                $obj->save();
             }
         }
-       return "Payload Added";
     }
+    
+}catch (Throwable $e) {
+    Log::error($e->getMessage(), [$e->getTraceAsString()]);
+    throw new HttpResponseException(response()->json(['status' => false , 'message' => $e->getMessage(), 'errors' => $e->getTraceAsString()]));
+}
+    return "Payload Added";
+}
 
+
+
+    public function fetchData(){
+        $data = TemplatePayload::select('payload')->get();
+        // $arr = json_decode($data);
+
+        foreach($data as $val){
+            foreach($val->payload as $key=>$data){
+                echo $key." : ".$data."\n";
+            }
+            echo"------------------------------\n";
+        }
+        return "ALL RECORDS FETCHED !";
+    }   
+
+
+
+
+    
 
     public function delete(Request $request){
         $template_record = Template::find($request->template_id);
